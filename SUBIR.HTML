@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Subir Noticias</title>
+  <link rel="stylesheet" href="STYLE.CSS">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 30px;
+      background: #f9f9f9;
+    }
+    .login-container, .form-container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #d00000;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #a00000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div class="login-container" id="loginBox">
+    <h2>Iniciar sesión</h2>
+    <input type="text" id="usuario" placeholder="Usuario" required>
+    <input type="password" id="clave" placeholder="Contraseña" required>
+    <button onclick="verificarAcceso()">Entrar</button>
+    <p id="errorLogin" style="color: red; display: none;">Usuario o contraseña incorrectos.</p>
+  </div>
+
+  <!-- FORMULARIO DE SUBIR NOTICIA -->
+  <div class="form-container" id="formBox" style="display: none;">
+    <h2>Subir Nueva Noticia</h2>
+    <form id="formNoticia">
+      <input type="text" name="titulo" placeholder="Título de la noticia" required>
+      <textarea name="contenido" placeholder="Resumen o contenido de la noticia" required></textarea>
+      
+      <!-- Imagen desde galería -->
+      <input type="file" id="imagen" accept="image/*" required>
+
+      <input type="date" name="fecha" required>
+      <button type="submit">Subir noticia</button>
+    </form>
+    <p id="mensajeExito" style="color: green; display: none;">¡Noticia subida correctamente!</p>
+  </div>
+
+  <script>
+    // 🔐 Login simple
+    const USUARIO_PERMITIDO = "admin";
+    const CLAVE_PERMITIDA = "1234";
+
+    function verificarAcceso() {
+      const usuario = document.getElementById("usuario").value;
+      const clave = document.getElementById("clave").value;
+      if (usuario === USUARIO_PERMITIDO && clave === CLAVE_PERMITIDA) {
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("formBox").style.display = "block";
+      } else {
+        document.getElementById("errorLogin").style.display = "block";
+      }
+    }
+
+    // 🧠 Convertir imagen a Base64
+    function convertirImagenABase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 📤 Enviar a Google Sheets usando la URL que me diste
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwTyE_fRJbzhMtv_btU5MRvCC_twFZNkCKR7xSlXRVcJnLnYkG3pujw0Yv9TTJr3cje/exec';
+    const form = document.getElementById('formNoticia');
+    const mensaje = document.getElementById('mensajeExito');
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const titulo = form.titulo.value;
+      const contenido = form.contenido.value;
+      const fecha = form.fecha.value;
+      const imagenInput = document.getElementById("imagen");
+      const imagenFile = imagenInput.files[0];
+
+      if (!imagenFile) {
+        alert("Por favor selecciona una imagen.");
+        return;
+      }
+
+      const imagenBase64 = await convertirImagenABase64(imagenFile);
+
+      const formData = new FormData();
+      formData.append("titulo", titulo);
+      formData.append("contenido", contenido);
+      formData.append("imagen", imagenBase64);
+      formData.append("fecha", fecha);
+
+      fetch(scriptURL, { method: 'POST', body: formData })
+        .then(() => {
+          mensaje.style.display = "block";
+          form.reset();
+        })
+        .catch(error => alert("Error al subir la noticia."));
+    });
+  </script>
+
+</body>
+</html>
